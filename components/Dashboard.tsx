@@ -105,26 +105,36 @@ export default function Dashboard() {
     (s): s is ProviderStatus => s !== null,
   )
   const booting = providerList.length < PROVIDERS.length
-  const allOk = !booting && providerList.every((s) => s.overall === 'ok')
-  const troubled = providerList.filter((s) => s.overall !== 'ok')
+  const errored = providerList.filter((s) => s.overall === 'error')
+  const degraded = providerList.filter((s) => s.overall === 'unknown')
+  // 'error' = a provider confirmed something's actually broken (e.g. a failed deploy).
+  // 'unknown' = we couldn't determine status (API hiccup, bad token, etc.) — real, but not
+  // the same severity as a confirmed outage, so it gets its own amber tier instead of
+  // triggering the same red DANGER alarm.
+  const severity = booting ? 'booting' : errored.length > 0 ? 'danger' : degraded.length > 0 ? 'degraded' : 'ok'
+
+  const BANNER_STYLES: Record<typeof severity, string> = {
+    booting: 'border-[var(--neon-cyan)] text-[var(--neon-cyan)] text-glow-cyan',
+    ok: 'border-[var(--neon-green)] text-[var(--neon-green)] text-glow-green',
+    degraded: 'border-[var(--neon-amber)] text-[var(--neon-amber)] text-glow-amber',
+    danger: 'border-[var(--neon-red)] text-[var(--neon-red)] text-glow-red animate-pulse-glow',
+  }
+  const BANNER_TEXT: Record<typeof severity, string> = {
+    booting: '◍ INITIALIZING…',
+    ok: '● ALL SYSTEMS GO',
+    degraded: '◆ DEGRADED',
+    danger: '▲ DANGER',
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div
-        className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 bg-black px-5 py-4 font-retro text-3xl tracking-widest sm:text-4xl ${
-          booting
-            ? 'border-[var(--neon-cyan)] text-[var(--neon-cyan)] text-glow-cyan'
-            : allOk
-              ? 'border-[var(--neon-green)] text-[var(--neon-green)] text-glow-green'
-              : 'border-[var(--neon-red)] text-[var(--neon-red)] text-glow-red animate-pulse-glow'
-        }`}
+        className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 bg-black px-5 py-4 font-retro text-3xl tracking-widest sm:text-4xl ${BANNER_STYLES[severity]}`}
       >
-        <span>
-          {booting ? '◍ INITIALIZING…' : allOk ? '● ALL SYSTEMS GO' : '▲ DANGER'}
-        </span>
-        {!booting && !allOk && (
-          <span className="font-mono text-xs font-bold tracking-normal text-red-300 sm:text-sm">
-            {troubled.length > 0 ? troubled.map((s) => s.label.toUpperCase()).join(' · ') : 'AWAITING STATUS'}
+        <span>{BANNER_TEXT[severity]}</span>
+        {(severity === 'danger' || severity === 'degraded') && (
+          <span className="font-mono text-xs font-bold tracking-normal opacity-90 sm:text-sm">
+            {[...errored, ...degraded].map((s) => s.label.toUpperCase()).join(' · ')}
           </span>
         )}
       </div>

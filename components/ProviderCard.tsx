@@ -37,7 +37,12 @@ export default function ProviderCard({ status }: { status: ProviderStatus }) {
       </div>
 
       {status.error ? (
-        <p className="font-mono text-sm text-[var(--neon-red)]">&gt; {status.error}</p>
+        <p
+          className="line-clamp-4 font-mono text-xs break-words text-[var(--neon-amber)]"
+          title={status.error}
+        >
+          &gt; {status.error}
+        </p>
       ) : status.items.length === 0 ? (
         <p className="font-mono text-sm text-gray-500">&gt; no services reported</p>
       ) : (
