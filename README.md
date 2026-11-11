@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# versuparail
 
-## Getting Started
+Single-page, read-only status dashboard for Vercel, Railway and Supabase. It currently watches one target app, TraderDaddy Pro, with the project, team and environment IDs set in `.env`. Product spec: `PLAN.md`. Working notes for contributors and agents: `CLAUDE.md`.
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000, or: npm run dev -- -p <port>
+npm run build
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+There is no test suite yet.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Server-side only, read from `.env` (gitignored, never commit it):
 
-## Learn More
+| Variable | Used for |
+|---|---|
+| `VERCEL_API_TOKEN`, `VERCEL_PROJECT_NAME`, `VERCEL_TEAM_ID`, `VERCEL_TEAM_SLUG` | Vercel status |
+| `RAILWAY_API_TOKEN`, `RAILWAY_PROJECT_ID`, `RAILWAY_ENVIRONMENT_ID` | Railway status |
+| `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` | Supabase project health |
 
-To learn more about Next.js, take a look at the following resources:
+## How it works
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`app/api/{vercel,railway,supabase}/route.ts` each return the `ProviderStatus` shape from `lib/types.ts`. A provider failure comes back as `overall: 'unknown'` with an error string and HTTP 200, so one outage does not blank the page. `components/Dashboard.tsx` polls all three every 60 seconds, with a manual Refresh button.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Token scopes, expiry dates and known gaps are in `CLAUDE.md`.
